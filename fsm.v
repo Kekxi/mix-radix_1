@@ -1,7 +1,7 @@
 module fsm (
   input clk,rst,
   input wire [2:0] conf,
-//   output wire sel,
+  output wire sel,
   output wire [4:0] i,
   output wire [4:0] k, //max = 31
   output wire [4:0] j, //max = 31
@@ -22,7 +22,8 @@ module fsm (
   parameter DONE_RADIX2 = 3'b011;
   parameter DONE_RADIX4 = 3'b100;
   // parameter DONE_INTT = 3'b101;
-
+  
+  reg sel_reg;
   reg swen_reg,sren_reg,sen_reg;
   wire sen_reg_q,sen_reg_q_tmp;
   reg iwen_reg,iren_reg,ien_reg;
@@ -43,8 +44,8 @@ module fsm (
 
   // radix2 阶段 输出读写   
   assign sen = ((conf == DONE_RADIX4) || (conf == DONE_RADIX2)) ? sen_reg_q : sen_reg_q_tmp;
-  shift_14 #(.data_width(1)) shif_swen(.clk(clk),.rst(rst),.din(swen_reg),.dout(swen));
-  shift_13 #(.data_width(1)) shif_sen(.clk(clk),.rst(rst),.din(sen_reg_q_tmp),.dout(sen_reg_q));
+  shift_8 #(.data_width(1)) shif_swen(.clk(clk),.rst(rst),.din(swen_reg),.dout(swen));
+  shift_7 #(.data_width(1)) shif_sen(.clk(clk),.rst(rst),.din(sen_reg_q_tmp),.dout(sen_reg_q));
   
   DFF #(.data_width(1)) dff_sen(.clk(clk),.rst(rst),.d(sen_reg),.q(sen_reg_q_tmp));
   DFF #(.data_width(1)) dff_sren(.clk(clk),.rst(rst),.d(sren_reg),.q(sren));
@@ -56,7 +57,9 @@ module fsm (
   
   DFF #(.data_width(1)) dff_ien(.clk(clk),.rst(rst),.d(ien_reg),.q(ien_reg_q_tmp));
   DFF #(.data_width(1)) dff_iren(.clk(clk),.rst(rst),.d(iren_reg),.q(iren));
-  
+
+  // 生成控制信号
+  DFF #(.data_width(1)) dff_sel(.clk(clk),.rst(rst),.d(sel_reg),.q(sel));
   always@(posedge clk or posedge rst)
   begin
     if(rst)
@@ -67,7 +70,7 @@ module fsm (
   
   always@(*)
   begin
-    // sel_reg = 0;
+    sel_reg = 0;
     sen_reg = 0; 
     swen_reg = 0;
     sren_reg = 0; 
@@ -77,7 +80,7 @@ module fsm (
     done_reg = 4'b0;
     case(conf_state)
     IDLE:begin 
-        //      sel_reg = 0;
+        sel_reg = 0;
         sen_reg = 0; 
         swen_reg = 0;
         sren_reg = 0; 
@@ -88,6 +91,7 @@ module fsm (
         end
 
     RADIX2:begin
+        sel_reg = 0;
         sen_reg = 1; 
         swen_reg = 1;
         sren_reg = 1;
@@ -98,7 +102,7 @@ module fsm (
         end
 
     RADIX4:begin 
-        //  sel_reg = 0;
+         sel_reg = 1;
          ien_reg = 1; 
          iwen_reg = 1;
          iren_reg = 1;
@@ -109,7 +113,7 @@ module fsm (
          end
 
     DONE_RADIX2:begin 
-        //  sel_reg = 0;
+         sel_reg = 0;
          sen_reg = 0;
          swen_reg = 0;
          sren_reg = 0; 
@@ -120,7 +124,7 @@ module fsm (
         end
 
     DONE_RADIX4:begin 
-        //  sel_reg = 0;
+         sel_reg = 1;
          sen_reg = 0;
          swen_reg = 0;
          sren_reg = 0; 
@@ -131,7 +135,7 @@ module fsm (
         end
 
     default:begin 
-        //  sel_reg = 0;
+         sel_reg = 0;
          done_reg = 4'b1;
          sen_reg = 0;
          swen_reg = 0;

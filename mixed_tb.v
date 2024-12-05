@@ -18,9 +18,9 @@ module mixed_tb;
     # 7 rst = 0;
     # 2 conf = 1;
     # 325 conf = 3;
-    # 170 conf = 2;
+    # 110 conf = 2;
     // # 15 conf = 2;
-    # 960 conf = 4;
+    # 900 conf = 4;
   end
   
 
