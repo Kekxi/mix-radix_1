@@ -23,7 +23,7 @@
 module PE3 #(parameter data_width = 12)(
         input clk,rst,
         input [data_width-1:0] u,v,
-        // input sel,
+        input sel,
         output [data_width-1:0] bf_upper,bf_lower
         );
        
@@ -32,11 +32,12 @@ module PE3 #(parameter data_width = 12)(
     wire [data_width-1:0] u_q1,u_q5;
     wire [data_width-1:0] mux_out1,mux_out2,mux_out3;
     // wire [data_width-1:0] mux_out5;
+    wire [data_width-1:0] mux_out4,mux_out5;
     wire [data_width-1:0] v_q1;
     wire [data_width-1:0] mult_out,add_out,sub_out;
     wire [data_width-1:0] add_out_q1,sub_out_q1,add_out_q5;
     wire [data_width-1:0] sub_op1,sub_op2;
-    wire [data_width-1:0] half_out1,half_out2;
+    // wire [data_width-1:0] half_out1,half_out2;
     
     //mux about signal u 
     DFF dff_u(.clk(clk),.rst(rst),.d(u),.q(u_q1));
@@ -46,11 +47,15 @@ module PE3 #(parameter data_width = 12)(
     //mux about signal v
     DFF dff_v(.clk(clk),.rst(rst),.d(v),.q(v_q1));
     assign mux_out3 = v_q1;
-    modular_mul mult_pe3(.clk(clk),.rst(rst),.A_in(mux_out3),.B_in(const_w),.P_out(mult_out));
+    modular_mul mult_pe3(.clk(clk),.rst(rst),.A_in(mux_out3),.B_in(mux_out4),.P_out(mult_out));
     assign mux_out2 = mult_out;
     
-    //mux about sub
-    // assign mux_out5 = mult_out;
+    //mux about tf
+    // DFF dff_w(.clk(clk),.rst(rst),.d(w),.q(w_q1));
+    assign mux_out4 = sel == 0 ? 12'd2285:const_w;
+
+    // mux about sub
+    assign mux_out5 = mult_out;
     assign sub_op1 = mux_out1;
     assign sub_op2 = mux_out2;
     modular_substraction  sub(.x_sub(sub_op1),.y_sub(sub_op2),.z_sub(sub_out)); 

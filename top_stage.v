@@ -4,6 +4,7 @@ module top_stage(
     output [1:0] done_flag);
 
     //fsm port signal
+    wire sel;
     wire [4:0] i;
     wire [4:0] k,j;
     wire [3:0] p;
@@ -19,9 +20,6 @@ module top_stage(
     // data_in 
     wire [11:0] q0,q1,q2,q3;
 
-    // stage_bf_out  bf_0_upper,bf_0_lower
-    wire [11:0] sbf_0_upper,sbf_0_lower;
-    wire [11:0] sbf_1_upper,sbf_1_lower;
  
     // radix-4_bf_out  bf_0_upper,bf_0_lower
     wire [11:0] bf_0_upper,bf_0_lower;
@@ -30,15 +28,8 @@ module top_stage(
     //data into bfu
     wire [11:0] u0,v0,u1,v1;
 
-    //data into banks
-    wire [11:0] D0,D1,D2,D3;
-    wire [11:0] D_0,D_1,D_2,D_3;
-
+    // //data into banks
     wire [11:0] d0,d1,d2,d3;
-    assign d0 = (swen == 1) ? D0 : D_0;
-    assign d1 = (swen == 1) ? D1 : D_1;
-    assign d2 = (swen == 1) ? D2 : D_2;
-    assign d3 = (swen == 1) ? D3 : D_3;
 
     //memory map port signal
     wire [4:0] new_address_0,new_address_1,new_address_2,new_address_3;
@@ -49,8 +40,16 @@ module top_stage(
 
     wire [4:0] bank_address_0,bank_address_1,bank_address_2,bank_address_3; 
 
+    wire [4:0] bank_address_0_dy_reg_s,bank_address_1_dy_reg_s,bank_address_2_dy_reg_s,bank_address_3_dy_reg_s;
+    wire [4:0] bank_address_0_dy_reg_i,bank_address_1_dy_reg_i,bank_address_2_dy_reg_i,bank_address_3_dy_reg_i;
+
     wire [4:0] bank_address_0_dy,bank_address_1_dy;
     wire [4:0] bank_address_2_dy,bank_address_3_dy;    
+
+    assign bank_address_0_dy = sel == 0 ?  bank_address_0_dy_reg_s :bank_address_0_dy_reg_i;
+    assign bank_address_1_dy = sel == 0 ?  bank_address_1_dy_reg_s :bank_address_1_dy_reg_i;
+    assign bank_address_2_dy = sel == 0 ?  bank_address_2_dy_reg_s :bank_address_2_dy_reg_i;
+    assign bank_address_3_dy = sel == 0 ?  bank_address_3_dy_reg_s :bank_address_3_dy_reg_i;
 
     //twiddle factors into banks
     wire [35:0] w;  
@@ -59,8 +58,9 @@ module top_stage(
     //twiddle factor address
     wire [5:0] tf_address;
 
-    fsm m1(.clk(clk),.rst(rst),
-           .conf(conf),
+    fsm m1( .clk(clk),.rst(rst),
+            .conf(conf),
+            .sel(sel),
             .i(i),
             .j(j),
             .k(k),
@@ -115,10 +115,15 @@ module top_stage(
                  .new_address_2(bank_address_2),.new_address_3(bank_address_3)
                  );   
 
-  shift_13 #(.data_width(5)) shf1 (.clk(clk),.rst(rst),.din(bank_address_0),.dout(bank_address_0_dy));   
-  shift_13 #(.data_width(5)) shf2 (.clk(clk),.rst(rst),.din(bank_address_1),.dout(bank_address_1_dy)); 
-  shift_13 #(.data_width(5)) shf3 (.clk(clk),.rst(rst),.din(bank_address_2),.dout(bank_address_2_dy)); 
-  shift_13 #(.data_width(5)) shf4 (.clk(clk),.rst(rst),.din(bank_address_3),.dout(bank_address_3_dy));     
+  shift_7 #(.data_width(5)) shf1 (.clk(clk_en),.rst(rst),.din(bank_address_0),.dout(bank_address_0_dy_reg_s));   
+  shift_7 #(.data_width(5)) shf2 (.clk(clk_en),.rst(rst),.din(bank_address_1),.dout(bank_address_1_dy_reg_s)); 
+  shift_7 #(.data_width(5)) shf3 (.clk(clk_en),.rst(rst),.din(bank_address_2),.dout(bank_address_2_dy_reg_s)); 
+  shift_7 #(.data_width(5)) shf4 (.clk(clk_en),.rst(rst),.din(bank_address_3),.dout(bank_address_3_dy_reg_s));     
+
+  shift_13 #(.data_width(5)) shf5 (.clk(clk),.rst(rst),.din(bank_address_0),.dout(bank_address_0_dy_reg_i));   
+  shift_13 #(.data_width(5)) shf6 (.clk(clk),.rst(rst),.din(bank_address_1),.dout(bank_address_1_dy_reg_i)); 
+  shift_13 #(.data_width(5)) shf7 (.clk(clk),.rst(rst),.din(bank_address_2),.dout(bank_address_2_dy_reg_i)); 
+  shift_13 #(.data_width(5)) shf8 (.clk(clk),.rst(rst),.din(bank_address_3),.dout(bank_address_3_dy_reg_i));     
     
 
   data_bank bank_0(
@@ -184,46 +189,28 @@ module top_stage(
                       .q0(q0),.q1(q1),.q2(q2),.q3(q3),
                       .u0(u0),.v0(v0),.u1(u1),.v1(v1)); 
 
-   stage_bf bf_0(
-              .clk(clk_en),.rst(rst),
-            //   .SREN(sren),
-              .u(u0),.v(u1),
-              .bf_upper(sbf_0_upper),.bf_lower(sbf_0_lower)
-              ); 
-
-   stage_bf bf_1(
-              .clk(clk_en),.rst(rst),
-            //   .SREN(sren),
-              .u(v0),.v(v1),
-              .bf_upper(sbf_1_upper),.bf_lower(sbf_1_lower)
-              );  
-
-  network_bf_out mux3(
-                       .clk(clk_en),.rst(rst),
-                       .bf_0_upper(sbf_0_upper),.bf_0_lower(sbf_0_lower),
-                       .bf_1_upper(sbf_1_upper),.bf_1_lower(sbf_1_lower),
-                       .sel_a_0(sel_a_0),.sel_a_1(sel_a_1),
-                       .sel_a_2(sel_a_2),
-                       .sel_a_3(sel_a_3),
-                       .d0(D0),.d1(D1),.d2(D2),.d3(D3));  
-
    compact_bf bf(
            .clk(clk),
            .rst(rst),
            .u0(u0),.v0(u1),.u1(v0),.v1(v1),
            .wa1(win1),.wa2(win2),.wa3(win3),
-        //    .sel(sel),
+           .sel(sel),
+           .sen(sen),
+           .ien(ien),
            .bf_0_upper(bf_0_upper),.bf_0_lower(bf_0_lower),
            .bf_1_upper(bf_1_upper),.bf_1_lower(bf_1_lower)); 
 
   network_bf_out mux4(
                        .clk(clk),.rst(rst),
+                       .sel(sel),
+                       .sen(sen),
+                      //  .ien(ien),
                        .bf_0_upper(bf_0_upper),.bf_0_lower(bf_0_lower),
                        .bf_1_upper(bf_1_upper),.bf_1_lower(bf_1_lower),
                        .sel_a_0(sel_a_0),.sel_a_1(sel_a_1),
                        .sel_a_2(sel_a_2),
                        .sel_a_3(sel_a_3),
-                       .d0(D_0),.d1(D_1),.d2(D_2),.d3(D_3));  
+                       .d0(d0),.d1(d1),.d2(d2),.d3(d3));  
 
   tf_address_generator m_tf(.clk(clk),.rst(rst),.k(k),.p(p),.tf_address(tf_address));  
   
