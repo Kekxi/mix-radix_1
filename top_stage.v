@@ -1,3 +1,4 @@
+`timescale 1ns / 1ps
 module top_stage(
     input clk,rst,
     input [2:0] conf,
@@ -7,12 +8,11 @@ module top_stage(
     wire sel;
     wire [4:0] i;
     wire [4:0] k,j;
-    wire [3:0] p;
-    wire [1:0] done_flag;
-    wire swen,sren,sen;
+    wire [2:0] p;
+//     wire [1:0] done_flag;
     wire iwen,iren,ien;
     wire clk_en;
-    assign clk_en = clk & sen;
+    assign clk_en = clk & (~sel & ien);
 
     //stage_address_generator port signal
     wire [6:0] old_address_0,old_address_1,old_address_2,old_address_3;
@@ -20,7 +20,6 @@ module top_stage(
     // data_in 
     wire [11:0] q0,q1,q2,q3;
 
- 
     // radix-4_bf_out  bf_0_upper,bf_0_lower
     wire [11:0] bf_0_upper,bf_0_lower;
     wire [11:0] bf_1_upper,bf_1_lower;
@@ -58,6 +57,7 @@ module top_stage(
     //twiddle factor address
     wire [5:0] tf_address;
 
+  (*DONT_TOUCH = "true"*) 
     fsm m1( .clk(clk),.rst(rst),
             .conf(conf),
             .sel(sel),
@@ -65,16 +65,13 @@ module top_stage(
             .j(j),
             .k(k),
             .p(p),
-            .swen(swen),
-            .sren(sren),
-            .sen(sen),
             .iwen(iwen),
             .iren(iren),
             .ien(ien),
             .done_flag(done_flag));
 
+  (*DONT_TOUCH = "true"*) 
     address_generator m2(
-               .clk(clk),.rst(rst),
                .i(i),
                .j(j),
                .k(k),
@@ -82,7 +79,7 @@ module top_stage(
                .old_address_0(old_address_0),.old_address_1(old_address_1),
                .old_address_2(old_address_2),.old_address_3(old_address_3));
 
-
+  (*DONT_TOUCH = "true"*) 
    conflict_free_memory_map map(
               .clk(clk),
               .rst(rst),
@@ -99,6 +96,7 @@ module top_stage(
               .bank_number_2(bank_number_2),
               .bank_number_3(bank_number_3));    
 
+  (*DONT_TOUCH = "true"*) 
   arbiter m3(
              .a0(bank_number_0),.a1(bank_number_1),
              .a2(bank_number_2),.a3(bank_number_3),
@@ -106,6 +104,7 @@ module top_stage(
              .sel_a_2(sel_a_2),.sel_a_3(sel_a_3)); 
 
 
+  (*DONT_TOUCH = "true"*) 
   network_bank_in mux1(
                  .b0(new_address_0),.b1(new_address_1),
                  .b2(new_address_2),.b3(new_address_3),
@@ -125,63 +124,51 @@ module top_stage(
   shift_13 #(.data_width(5)) shf7 (.clk(clk),.rst(rst),.din(bank_address_2),.dout(bank_address_2_dy_reg_i)); 
   shift_13 #(.data_width(5)) shf8 (.clk(clk),.rst(rst),.din(bank_address_3),.dout(bank_address_3_dy_reg_i));     
     
-
+  (*DONT_TOUCH = "true"*) 
   data_bank bank_0(
                    .clk(clk),
-                   .rst(rst),
                    .A1(bank_address_0_dy),
                    .A2(bank_address_0),
                    .D(d0),
-                   .SWEN(swen),
-                   .SREN(sren),
-                   .SEN(sen),
                    .IWEN(iwen),
                    .IREN(iren),
                    .IEN(ien),
                    .Q(q0));
-         
+
+  (*DONT_TOUCH = "true"*)          
   data_bank bank_1(
                    .clk(clk),
-                   .rst(rst),
                    .A1(bank_address_1_dy),
                    .A2(bank_address_1),
                    .D(d1),
-                   .SWEN(swen),
-                   .SREN(sren),
-                   .SEN(sen),
                    .IWEN(iwen),
                    .IREN(iren),
                    .IEN(ien),
                    .Q(q1));
-             
+
+  (*DONT_TOUCH = "true"*)              
   data_bank bank_2(
                    .clk(clk),
-                   .rst(rst),
                    .A1(bank_address_2_dy),
                    .A2(bank_address_2),
                    .D(d2),
-                   .SWEN(swen),
-                   .SREN(sren),
-                   .SEN(sen),
                    .IWEN(iwen),
                    .IREN(iren),
                    .IEN(ien),
                    .Q(q2));  
-           
+
+  (*DONT_TOUCH = "true"*)         
   data_bank bank_3(
                    .clk(clk),
-                   .rst(rst),
                    .A1(bank_address_3_dy),
                    .A2(bank_address_3),
                    .D(d3),
-                   .SWEN(swen),
-                   .SREN(sren),
-                   .SEN(sen),
                    .IWEN(iwen),
                    .IREN(iren),
                    .IEN(ien),
                    .Q(q3));
 
+  (*DONT_TOUCH = "true"*) 
    network_bf_in mux2(
                       .clk(clk),.rst(rst),
                       .sel_a_0(sel_a_0),.sel_a_1(sel_a_1),.sel_a_2(sel_a_2),
@@ -189,22 +176,22 @@ module top_stage(
                       .q0(q0),.q1(q1),.q2(q2),.q3(q3),
                       .u0(u0),.v0(v0),.u1(u1),.v1(v1)); 
 
+  (*DONT_TOUCH = "true"*) 
    compact_bf bf(
            .clk(clk),
            .rst(rst),
            .u0(u0),.v0(u1),.u1(v0),.v1(v1),
            .wa1(win1),.wa2(win2),.wa3(win3),
            .sel(sel),
-           .sen(sen),
            .ien(ien),
            .bf_0_upper(bf_0_upper),.bf_0_lower(bf_0_lower),
            .bf_1_upper(bf_1_upper),.bf_1_lower(bf_1_lower)); 
 
+  (*DONT_TOUCH = "true"*) 
   network_bf_out mux4(
                        .clk(clk),.rst(rst),
                        .sel(sel),
                        .sen(sen),
-                      //  .ien(ien),
                        .bf_0_upper(bf_0_upper),.bf_0_lower(bf_0_lower),
                        .bf_1_upper(bf_1_upper),.bf_1_lower(bf_1_lower),
                        .sel_a_0(sel_a_0),.sel_a_1(sel_a_1),
@@ -218,6 +205,7 @@ module top_stage(
   assign win2 = w[23:12];
   assign win3 = w[11:0];
 
+  (*DONT_TOUCH = "true"*) 
   tf_ROM rom0(
               .clk(clk),
               .A(tf_address),

@@ -4,7 +4,7 @@ module address_generator(
     input [4:0] i,//max = 31
     input [4:0] k,//max = 31
     input [4:0] j,//max = 31
-    input [3:0] p,//阶段数 
+    input [2:0] p,//阶段数 
     output wire [6:0] old_address_0,old_address_1,old_address_2,
     output wire [6:0] old_address_3
 );

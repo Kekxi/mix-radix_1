@@ -22,7 +22,7 @@
 
 module PE1 #(parameter data_width = 12)(
     input clk,rst,
-    // input sel,
+    input sel,
     input [data_width-1:0] u,v,
     output [data_width-1:0] bf_upper,bf_lower
     );
@@ -42,9 +42,7 @@ module PE1 #(parameter data_width = 12)(
    modular_add  add(.x_add(u_q3),.y_add(v_q3),.z_add(add_out));
    shift_3  shf_add (.clk(clk),.rst(rst),.din(add_out),.dout(add_out_q3));
    shift_3  shf_sub (.clk(clk),.rst(rst),.din(sub_out),.dout(sub_out_q3));
-   
-    // modular_half #(.data_width(14)) half1 (.x_half(add_out_q3),.y_half(half_out1));
-    // modular_half #(.data_width(14)) half2 (.x_half(sub_out_q3),.y_half(half_out2));
+
     assign bf_lower = add_out_q3;
     assign bf_upper = sub_out_q3;  
 
