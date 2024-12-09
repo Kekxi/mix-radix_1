@@ -23,7 +23,7 @@
 module PE2 #(parameter data_width = 12)(
     input clk,rst,
     input [data_width-1:0] u,v,w1,w2,
-    // input sel,
+    input sel,
     output [data_width-1:0] bf_upper,bf_lower
     );
     

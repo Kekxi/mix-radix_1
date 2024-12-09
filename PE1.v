@@ -22,7 +22,7 @@
 
 module PE1 #(parameter data_width = 12)(
     input clk,rst,
-    // input sel,
+    input sel,
     input [data_width-1:0] u,v,
     output [data_width-1:0] bf_upper,bf_lower
     );
