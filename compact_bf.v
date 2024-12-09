@@ -3,7 +3,6 @@ module compact_bf #(parameter data_width = 12)(
         input [data_width-1:0] u0,v0,u1,v1,
         input [data_width-1:0] wa1,wa2,wa3,
         input sel,
-        input sen,
         input ien,
         output [data_width-1:0] bf_0_upper,bf_0_lower,bf_1_upper,bf_1_lower
         );
@@ -13,10 +12,10 @@ module compact_bf #(parameter data_width = 12)(
         wire [data_width-1:0] PE3_in_up,PE3_in_low,PE3_out_up,PE3_out_low;
         
         wire   clk_en;            // radix-2 clk
-        assign clk_en = clk & sen;    
+        assign clk_en = clk & ( ~sel & ien);    
 
         wire   clk_in;            // radix-4 clk
-        assign clk_in = clk & ien;        
+        assign clk_in = clk & (sel & ien);        
 
         wire clk_c;               // pe0 pe3 clk
         assign clk_c = sel == 0 ? clk_en : clk;
